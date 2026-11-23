@@ -1,0 +1,23 @@
+[Unit]
+Description=Vika Audio Pi headset buttons (AVRCP uinput) to MPD
+Documentation=file:/usr/local/share/doc/vika-audio/BLUETOOTH.md
+Wants=vika-audio.service
+After=vika-audio.service bluetooth.service
+
+[Service]
+Type=simple
+User=vika
+Group=vika
+SupplementaryGroups=input audio
+Environment=MPD_HOST=/run/vika-audio/mpd.sock
+ExecStart=/usr/bin/python3 /usr/local/lib/vika-audio/avrcp-keys.py
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+WorkingDirectory=/tmp
+
+[Install]
+WantedBy=multi-user.target

@@ -14,7 +14,7 @@
 - GPIO contact controls verified: `vika-audio-gpio.service` is enabled and active; shorting GPIO27 -> next, GPIO22 -> prev and GPIO17 -> toggle changes playback as expected. Buttons were confirmed working by the operator.
 - MPD LAN control enabled for phone clients (MALP): `/etc/vika-audio/mpd.local.conf` adds `bind_to_address "0.0.0.0"`, port 6600 answers on the LAN and the MPD handshake was verified from the phone-side network. Local scripts keep using the UNIX socket; the port is not reachable from the internet and has no password (home LAN only). `verify.sh` understands the opt-in listener.
 - Bluetooth speaker mode (Pi as A2DP sink for AIMP on a phone/PC) installed: `vika-bt-speaker.service` starts, marks the adapter discoverable/pairable and runs `bluealsa-aplay` to the 3.5 mm jack; `scripts/bt-speaker.sh on|off|status` toggles it. A real phone/PC stream is still to be tested.
-- AVRCP button bridge installed: `vika-avrcp.service` exports an MPRIS player via `org.bluez.Media1.RegisterPlayer` and maps play/pause/next/prev to `mpc`; `bluetoothd` logs `Player registered: ... path=/org/vika/mpris`, and Pause/Play/Next were verified from the bus. The previous `mpris-proxy` user unit was disabled globally so it cannot occupy the single player slot. Headset-button press test is still pending.
+- AVRCP headset buttons verified: BlueZ exposes the headset as `HD-610 (AVRCP)` (`/dev/input/eventN`); `vika-avrcp-keys.service` maps 163/165/200/201 to `mpc next/prev/toggle`. Pause was confirmed on the hardware. The earlier MPRIS bridge (`vika-avrcp`) is kept as an alternative but is disabled, because BlueZ consumed its commands without delivering them and suppressed the uinput fallback.
 
 ## Installation obstacles and fixes
 
@@ -25,7 +25,7 @@
 
 ## Still needs physical testing
 
-- Headset HD-610 button press (AVRCP → MPD) with the bridge active.
+- Remaining HD-610 buttons: next/prev and volume (same evdev path).
 - Bluetooth speaker mode with a real phone/PC running AIMP (pairing, stream, analog output).
 - Cold power-on automatic playback with **no Wi-Fi** available.
 - USB flash insertion, filename-ordered playback, safe removal, and return to microSD playlist on the actual Pi.

@@ -124,62 +124,47 @@ trust <MAC>
 connect <MAC>
 ```
 
-## Headset buttons (AVRCP → MPD)
+## Headset buttons (AVRCP)
 
-BlueZ forwards AVRCP commands (play/pause/next/previous from the headphones)
-to exactly **one** registered media player, and that object must implement
-`org.mpris.MediaPlayer2.Player`. `vika-avrcp.service` exports such an object
-(`scripts/avrcp-mpd.py`) and translates its methods into `mpc` calls on the
-local MPD socket:
+Verified on the Pi: BlueZ creates a virtual keyboard device named
+**`HD-610 (AVRCP)`** (`/dev/input/eventN`) and injects key events for the
+headset buttons. `vika-avrcp-keys.service` reads that device directly
+(Python standard library, no extra packages) and maps the keys to `mpc`:
 
-| MPRIS method | command |
-| --- | --- |
-| `Play` | `mpc play` |
-| `Pause` | `mpc pause` |
-| `PlayPause` | `mpc toggle` |
-| `Stop` | `mpc stop` |
-| `Next` | `mpc next` |
-| `Previous` | `mpc prev` |
-| `Seek`, `SetPosition` | `mpc seek` |
+| Key code (Linux input) | Button | Action |
+| --- | --- | --- |
+| `KEY_NEXTSONG` 163 | next | `mpc next` |
+| `KEY_PREVIOUSSONG` 165 | previous | `mpc prev` |
+| `KEY_PLAYCD` 200 / `KEY_PAUSECD` 201 / `KEY_PLAYPAUSE` 164 | play/pause | `mpc toggle` |
+| `KEY_STOPCD` 166 | stop | `mpc stop` |
+| `KEY_VOLUMEUP` 115 / `KEY_VOLUMEDOWN` 114 | volume | `mpc volume ±5%` |
+| `KEY_FASTFORWARD` 208 / `KEY_REWIND` 207 | long next/prev (if sent) | `mpc seek ±30` |
 
-The service runs as **root**: `/usr/share/dbus-1/system.d/bluetooth.conf`
-grants the `org.bluez.MediaPlayer1` interface only to `policy user="root"`,
-and `bluetoothd` (root) is the process that calls the object. It needs the
-system D-Bus and `MPD_HOST=/run/vika-audio/mpd.sock`, nothing else.
+The headset can emit a `PAUSE`+`PLAY` pair for one press, so play/pause is
+debounced for 0.6 s and toggles exactly once. The monitor rescans sysfs
+every 2 s, so a headset reconnect that creates a new `eventN` is picked up
+automatically. It runs as `vika` (the `input` group is required; the
+installer adds it on Debian images where it is missing).
 
-### Only one player slot
-
-If a desktop session is present, `mpris-proxy` (a **user** unit) usually owns
-the slot and the headset buttons control that proxy instead. The installer
-disables it globally:
+Check it:
 
 ```sh
-sudo systemctl --global disable mpris-proxy.service
-pkill -x mpris-proxy   # only if it is still running
+systemctl status vika-avrcp-keys.service
+journalctl -u vika-avrcp-keys -b --no-pager
+sudo libinput debug-events     # press buttons, expect KEY_NEXTSONG etc.
 ```
 
-If another player already holds the slot, `avrcp-mpd` logs
-`RegisterPlayer failed: ... AlreadyExists`. It is not retried until BlueZ
-restarts.
+### Alternative: MPRIS player registration
 
-### Check it
+`scripts/avrcp-mpd.py` (unit `vika-avrcp.service`) exports an MPRIS player
+and registers it through `org.bluez.Media1.RegisterPlayer`, mapping
+Play/Pause/Next/Previous to `mpc`. BlueZ logs `Player registered`, but on
+this Pi the passthrough commands were consumed without ever reaching the
+dbus-python object, and the working uinput fallback stopped. The evdev
+service above is therefore the default.
 
-```sh
-systemctl status vika-avrcp.service
-journalctl -u vika-avrcp -b --no-pager
-journalctl -u bluetooth -b --no-pager | grep -i player   # Player registered: ...
-```
-
-Test the bridge without touching the headphones (as root):
-
-```sh
-UNIQ=$(busctl list --no-pager | awk '/python3/{print $1; exit}')
-sudo busctl call "$UNIQ" /org/vika/mpris org.mpris.MediaPlayer2.Player Pause
-sudo busctl call "$UNIQ" /org/vika/mpris org.mpris.MediaPlayer2.Player Play
-```
-
-`vika` itself cannot call the object: the system bus policy only allows root
-to talk to it. That is fine — `bluetoothd` runs as root.
+Do **not** enable both: BlueZ consults the registered MPRIS player before
+the uinput fallback, so `vika-avrcp` wins and the keys never arrive.
 
 ## Pi as a Bluetooth speaker (AIMP on a phone or PC)
 
@@ -216,7 +201,7 @@ Notes:
   subdevices), so a separate `dmix` is not required; MPD and the Bluetooth
   stream can share the jack. Still, pausing MPD is the sane default.
 - While AIMP on the phone is playing, the HD-610 buttons control the
-  **phone**, not the Pi. The Pi-side AVRCP bridge (`vika-avrcp`) only matters
+  **phone**, not the Pi. The Pi-side button service (`vika-avrcp-keys`) only matters
   when the Pi itself plays.
 - To make the Pi appear as a loudspeaker instead of a generic device, add
   `Class = 0x200414` under `[General]` in `/etc/bluetooth/main.conf`, then

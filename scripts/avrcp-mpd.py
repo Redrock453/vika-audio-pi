@@ -93,26 +93,32 @@ class MprisPlayer(dbus.service.Object):
     # --- org.mpris.MediaPlayer2.Player methods -------------------------
     @dbus.service.method(PLAYER_IFACE)
     def Play(self):
+        log("method Play")
         mpc("play")
 
     @dbus.service.method(PLAYER_IFACE)
     def Pause(self):
+        log("method Pause")
         mpc("pause")
 
     @dbus.service.method(PLAYER_IFACE)
     def PlayPause(self):
+        log("method PlayPause")
         mpc("toggle")
 
     @dbus.service.method(PLAYER_IFACE)
     def Stop(self):
+        log("method Stop")
         mpc("stop")
 
     @dbus.service.method(PLAYER_IFACE)
     def Next(self):
+        log("method Next")
         mpc("next")
 
     @dbus.service.method(PLAYER_IFACE)
     def Previous(self):
+        log("method Previous")
         mpc("prev")
 
     @dbus.service.method(PLAYER_IFACE, in_signature="x", out_signature="x")
