@@ -297,6 +297,29 @@ VIKA_USB_DEVICE="/dev/disk/by-label/VIKA_AUDIO"
 - Wi-Fi-пароли, SSH-ключи, MAC-адреса и аудиоколлекция в репозиторий не
   попадают (см. `.gitignore`).
 
+## 8a. Сохранение позиции и громкость аналога
+
+`boot-play.sh` пересобирает очередь при загрузке и восстанавливает позицию
+из `/var/lib/vika-audio/state/<local|usb>.resume`. Этот файл обновляют:
+
+- `vika-position.timer` — раз в 30 секунд (переживает пропадание питания);
+- `ExecStop` юнита `vika-audio.service` — перед остановкой MPD.
+
+`vika_save_resume` читает файл через `mpc -f %file% current`, а позицию —
+из строки `mpc status`: mpc не подставляет `%elapsed%`, поэтому старый
+вариант молча не сохранял ничего.
+
+Аналоговый выход держится на максимуме: MPD volume 100% (его выставляет
+`bt-autoswitch` при переключении на аналог) и аппаратный PCM 100%
+(+4.00 dB). Состояние ALSA сохраняется `alsactl store` и восстанавливается
+при загрузке; проверка:
+
+```sh
+MPD_HOST=/run/vika-audio/mpd.sock mpc volume   # volume:100%
+amixer -c 0 sget PCM | grep Mono:              # Playback 400 [100%]
+cat /var/lib/vika-audio/state/local.resume
+```
+
 ## 9. Эксплуатация
 
 ```sh
