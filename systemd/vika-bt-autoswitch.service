@@ -1,0 +1,24 @@
+[Unit]
+Description=Vika Audio Pi switch MPD output with Bluetooth audio devices
+Documentation=file:/usr/local/share/doc/vika-audio/BLUETOOTH.md
+Wants=vika-audio.service
+After=vika-audio.service bluetooth.service
+
+[Service]
+Type=simple
+User=vika
+Group=vika
+SupplementaryGroups=audio
+Environment=MPD_HOST=/run/vika-audio/mpd.sock
+ExecStart=/usr/bin/python3 /usr/local/lib/vika-audio/bt-autoswitch.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+WorkingDirectory=/tmp
+RestrictAddressFamilies=AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

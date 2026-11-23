@@ -80,9 +80,11 @@ REQUIRED_FILES=(
     scripts/avrcp-mpd.py
     scripts/avrcp-keys.py
     scripts/bt-speaker.sh
+    scripts/bt-autoswitch.py
     systemd/vika-avrcp.service
     systemd/vika-avrcp-keys.service
     systemd/vika-bt-speaker.service
+    systemd/vika-bt-autoswitch.service
     systemd/vika-audio-gpio.service
     docs/GPIO.md
     systemd/vika-audio.service
@@ -282,9 +284,11 @@ if ((WITH_BLUETOOTH)); then
     deploy_file "$REPO_ROOT/scripts/avrcp-mpd.py" "$LIB_DIR/avrcp-mpd.py" 0755
     deploy_file "$REPO_ROOT/scripts/avrcp-keys.py" "$LIB_DIR/avrcp-keys.py" 0755
     deploy_file "$REPO_ROOT/scripts/bt-speaker.sh" "$LIB_DIR/bt-speaker.sh" 0755
+    deploy_file "$REPO_ROOT/scripts/bt-autoswitch.py" "$LIB_DIR/bt-autoswitch.py" 0755
     deploy_file "$REPO_ROOT/systemd/vika-avrcp.service" "$UNIT_DIR/vika-avrcp.service" 0644
     deploy_file "$REPO_ROOT/systemd/vika-avrcp-keys.service" "$UNIT_DIR/vika-avrcp-keys.service" 0644
     deploy_file "$REPO_ROOT/systemd/vika-bt-speaker.service" "$UNIT_DIR/vika-bt-speaker.service" 0644
+    deploy_file "$REPO_ROOT/systemd/vika-bt-autoswitch.service" "$UNIT_DIR/vika-bt-autoswitch.service" 0644
 else
     log "AVRCP bridge not installed (--no-bluetooth)"
 fi
@@ -321,6 +325,7 @@ if ((WITH_BLUETOOTH)); then
     # player before falling back to uinput, so only one may be active.
     run systemctl disable --now vika-avrcp.service >/dev/null 2>&1 || true
     run systemctl enable --now vika-avrcp-keys.service
+    run systemctl enable --now vika-bt-autoswitch.service
 fi
 if ((WITH_USB_AUTOMOUNT)); then
     run systemctl enable --now vika-audio-usb.timer

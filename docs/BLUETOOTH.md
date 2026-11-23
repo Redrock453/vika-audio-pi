@@ -166,6 +166,31 @@ service above is therefore the default.
 Do **not** enable both: BlueZ consults the registered MPRIS player before
 the uinput fallback, so `vika-avrcp` wins and the keys never arrive.
 
+## Output follows the headset (boot-safe)
+
+MPD starts before the headset reconnects. At that moment the BlueALSA
+output cannot be opened, MPD disables it, and if the analog output was
+disabled by an earlier `audio-out.sh bt`, the player ends up with no output
+at all (`exception: All audio outputs are disabled` in the journal).
+
+`vika-bt-autoswitch.service` polls `org.bluez` every 2 s and keeps the
+output sane:
+
+- **headset connects** → enable `Bluetooth (BlueALSA)`, check that MPD
+  really opened it, then disable analog; if no output was enabled before
+  (the boot case), resume playback;
+- **headset disconnects** → enable analog and disable Bluetooth, so the
+  queue keeps playing on the jack;
+- **nothing enabled at startup** → enable analog (offline-first fallback);
+- **speaker mode active** (`vika-bt-speaker`) → does nothing.
+
+It runs as `vika`, needs no extra packages, and logs every switch:
+
+```sh
+journalctl -u vika-bt-autoswitch -b --no-pager
+MPD_HOST=/run/vika-audio/mpd.sock mpc outputs
+```
+
 ## Pi as a Bluetooth speaker (AIMP on a phone or PC)
 
 AIMP has no Linux ARM build, so it cannot run on the Pi itself. The practical
