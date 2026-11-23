@@ -409,6 +409,12 @@ vika_select_usb() {
     VIKA_USB_REASON=""
 
     if [[ -n $pinned ]]; then
+        # The root-device guard also applies to a pinned device: a hand-edited
+        # VIKA_USB_DEVICE must never end up mounting the system SD read-only.
+        if vika_is_root_device "$pinned"; then
+            VIKA_USB_REASON="configured device $pinned carries the root filesystem; refusing"
+            return 1
+        fi
         if [[ ! -b $pinned ]]; then
             VIKA_USB_REASON="configured device $pinned is not a block device"
             return 1

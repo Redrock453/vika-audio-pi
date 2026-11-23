@@ -245,7 +245,20 @@ else
     log "vika is already in the audio group"
 fi
 
+# The GPIO unit (vika-audio-gpio.service) runs as vika and opens
+# /dev/gpiochip0 through lgpio; without this group the service exits.
+if ! id -nG vika 2>/dev/null | tr ' ' '\n' | grep -qx gpio; then
+    log "adding vika to the gpio group"
+    run usermod -aG gpio vika
+else
+    log "vika is already in the gpio group"
+fi
+
 create_if_missing "$REPO_ROOT/config/vika-audio.env" "$ETC_DIR/vika-audio.env" 0644
+# The env file is sourced by usb-media.sh (root). Whatever created it earlier,
+# ownership must stay root:root, world-readable, not user-writable.
+run chown root:root -- "$ETC_DIR/vika-audio.env"
+run chmod 0644 -- "$ETC_DIR/vika-audio.env"
 deploy_file "$REPO_ROOT/config/mpd.conf" "$ETC_DIR/mpd.conf" 0644
 deploy_file "$REPO_ROOT/scripts/lib/media-lib.sh" "$LIB_DIR/lib/media-lib.sh" 0644
 deploy_file "$REPO_ROOT/scripts/play-source.sh" "$LIB_DIR/play-source.sh" 0755

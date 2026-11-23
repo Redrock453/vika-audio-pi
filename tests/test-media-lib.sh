@@ -173,6 +173,15 @@ else
     t_pass "root disk on USB is never selected"
 fi
 
+# The same guard must hold for a hand-pinned device (VIKA_USB_DEVICE): the
+# reason must come from the root guard, not from the block-device check.
+if vika_select_usb /dev/sda1 >/dev/null; then
+    t_fail "pinned root disk is refused"
+else
+    t_pass "pinned root disk is refused"
+fi
+t_contains "pinned refusal explains the root guard" "carries the root filesystem" "${VIKA_USB_REASON:-}"
+
 # USB storage that does not set the removable flag (USB SSD/enclosure):
 # detection must fall back to the parent disk transport.
 cat > "$tmp/lsblk.ssd" <<'EOF'

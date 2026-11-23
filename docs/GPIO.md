@@ -20,6 +20,10 @@ Install after MPD using:
     sudo systemctl daemon-reload
     sudo systemctl enable --now vika-audio-gpio.service
 
+Prerequisite: user `vika` must be in the `gpio` group to open `/dev/gpiochip0`
+(installer >= 2026-11-23 adds it; check manually with `groups vika | grep gpio`,
+otherwise: `sudo usermod -aG gpio vika` and log in again).
+
 Verify:
     systemctl is-active vika-audio-gpio.service
     journalctl -u vika-audio-gpio -n 15 --no-pager

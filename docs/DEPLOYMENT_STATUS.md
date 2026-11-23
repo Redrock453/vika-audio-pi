@@ -18,6 +18,7 @@
 1. Initial Raspbian redirect sent one package download to an unreachable regional mirror. The live Pi Raspbian APT source was changed to `https://archive.raspbian.org/raspbian/`; an original copy was saved under `/var/backups/vika-audio/apt-sources/`. Helper script: `scripts/fix-apt-and-install.sh`.
 2. MPD initially failed to autoplay because `mpc play` accepts **1-based** song positions, but `scripts/lib/media-lib.sh` supplied 0. Corrected in commit `ff1807a` and redeployed; playback verified as active after a systemd service restart.
 3. Test fake MPC was corrected to mirror the real 1-based behavior; all six scripted suites pass on the T450.
+4. Verified against the Debian packaging sources of bluez-alsa 4.3.1-3 (Trixie): the shipped `bluealsa.service` already runs `/usr/bin/bluealsa -S -p a2dp-source -p a2dp-sink`, and `libasound2-plugin-bluez` is the BlueALSA ALSA plugin required for the `bluealsa:DEV=...` device string. Consequence for the A2DP blocker: the drop-in in `bt-a2dp-setup.sh --apply` is only a fallback; the working hypothesis for "Protocol not available" is stale pairing / bluealsa not registered at pairing time — see `docs/BLUETOOTH.md`.
 
 ## Still needs physical testing
 

@@ -15,6 +15,9 @@
 - [Этапы и последовательность работ](docs/PLAN.md)
 - [Архитектурные решения и текущие факты](docs/DECISIONS.md)
 - [MPD + USB: развёртывание офлайн-плеера](docs/MPD_DEPLOY.md)
+- [Bluetooth A2DP (HD-610): диагностика и включение](docs/BLUETOOTH.md)
+- [Статус развёртывания на реальном Pi](docs/DEPLOYMENT_STATUS.md)
+- [GPIO-кнопки: распиновка и проверка](docs/GPIO.md)
 
 ## Аппаратная база
 
