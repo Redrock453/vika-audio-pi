@@ -1,5 +1,7 @@
 # GPIO contacts instead of push-buttons
 
+> **Status: verified on hardware (2026-11-23).** All three contacts work on the Pi 3 A+ (`vika-audio-gpio.service` enabled and active).
+
 Raspberry Pi 3 Model A+ 40-pin header. Numbers below are physical header pin numbers, not BCM GPIO numbers.
 
 | Briefly connect physical pins | Action |
