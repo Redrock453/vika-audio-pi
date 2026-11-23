@@ -68,7 +68,9 @@ Manual equivalent:
   ExecStart=
   ExecStart=/usr/bin/bluealsa -S --profile=a2dp-source --profile=a2dp-sink
   sudo systemctl daemon-reload
-  sudo systemctl restart bluealsa.service bluetooth.service
+  sudo systemctl restart bluetooth.service
+  sleep 2
+  sudo systemctl restart bluealsa.service
 
 Then pair/trust/connect the HD-610 and test:
   bluealsa-aplay --list-devices
@@ -77,19 +79,42 @@ EOF
     exit 0
 fi
 
-log "Applying bluealsa.service drop-in (a2dp-source + a2dp-sink)"
+log "Applying BlueALSA A2DP profile override (a2dp-source + a2dp-sink)"
 
-DROPIN_DIR=/etc/systemd/system/bluealsa.service.d
-mkdir -p "$DROPIN_DIR"
-cat > "$DROPIN_DIR/vika-a2dp.conf" <<'EOF'
+if ! systemctl cat bluealsa.service >/dev/null 2>&1; then
+    log "bluealsa.service not found; creating a minimal unit"
+    cat > /etc/systemd/system/bluealsa.service <<'EOF'
+[Unit]
+Description=BlueALSA daemon
+After=bluetooth.service
+Requires=bluetooth.service
+
+[Service]
+ExecStart=/usr/bin/bluealsa -S --profile=a2dp-source --profile=a2dp-sink
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl daemon-reload
+    systemctl enable bluealsa.service
+else
+    DROPIN_DIR=/etc/systemd/system/bluealsa.service.d
+    mkdir -p "$DROPIN_DIR"
+    cat > "$DROPIN_DIR/vika-a2dp.conf" <<'EOF'
 [Service]
 ExecStart=
 ExecStart=/usr/bin/bluealsa -S --profile=a2dp-source --profile=a2dp-sink
 EOF
+    systemctl daemon-reload
+fi
 
-systemctl daemon-reload
-systemctl restart bluealsa.service
+# Restart BlueZ first so BlueALSA re-registers its A2DP profiles with a running
+# bluetoothd. Restarting in the opposite order drops the registration and brings
+# back "a2dp-sink profile connect failed: Protocol not available".
 systemctl restart bluetooth.service
+sleep 2
+systemctl restart bluealsa.service
 
 log "Restarted. Current status:"
 systemctl status bluealsa.service --no-pager -n 8 || true
