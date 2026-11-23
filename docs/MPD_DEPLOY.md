@@ -268,8 +268,27 @@ VIKA_USB_DEVICE="/dev/disk/by-label/VIKA_AUDIO"
 
 ## 8. Сеть, порты, приватность
 
-- MPD слушает **только UNIX-сокет** `/run/vika-audio/mpd.sock`; TCP-порт не
-  открывается. `verify.sh` отдельно проверяет отсутствие слушателя на 6600.
+- По умолчанию MPD слушает **только UNIX-сокет** `/run/vika-audio/mpd.sock`;
+  TCP-порт не открывается. `verify.sh` проверяет, что на 6600 никто не
+  слушает, если только LAN-доступ не включён явно (см. ниже).
+- **Управление с телефона (MALP/MPDroid).** На конкретном Pi создаётся
+  локальный файл (в git не попадает):
+
+  ```sh
+  # /etc/vika-audio/mpd.local.conf
+  bind_to_address "0.0.0.0"
+  ```
+
+  и в `/etc/vika-audio/mpd.conf` должна быть строка
+  `include_optional "/etc/vika-audio/mpd.local.conf"` (install.sh её ставит).
+  Файл должен быть читаем пользователю `vika`: `chown root:vika`,
+  `chmod 0640` — иначе MPD не стартует (`Permission denied`).
+  После `systemctl restart vika-audio` проверка: `ss -ltnp | grep 6600`.
+
+  В MALP: сервер `10.217.127.59` (или `vika-audio.local`), порт `6600`,
+  пароль пустой. Порт доступен только в домашней сети; Pi не публикует его
+  в интернет и не требует Wi-Fi для локального воспроизведения. Пароля нет:
+  любой в той же сети может управлять плеером.
 - Штатный `mpd.service` отключается, иначе он занял бы 6600 и `/var/lib/mpd`.
 - Сервис не требует Wi-Fi/Ethernet: в unit нет сетевых зависимостей.
 - MPD работает от `vika`, с `ProtectHome=read-only`, `ProtectSystem=strict`,

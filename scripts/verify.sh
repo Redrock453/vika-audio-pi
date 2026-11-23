@@ -256,9 +256,19 @@ else
 fi
 
 section "network exposure"
+mpd_tcp_requested=0
+if grep -qs '^[[:space:]]*bind_to_address' /etc/vika-audio/mpd.local.conf 2>/dev/null; then
+    mpd_tcp_requested=1
+fi
 if command -v ss >/dev/null 2>&1; then
     if ss -ltn 2>/dev/null | grep -Eq '[:.]6600[[:space:]]'; then
-        bad "something listens on TCP 6600 (stock MPD?); no external port is allowed"
+        if ((mpd_tcp_requested)); then
+            ok "MPD listens on TCP 6600 for LAN clients (mpd.local.conf)"
+        else
+            bad "something listens on TCP 6600 without mpd.local.conf (stock MPD?); not allowed"
+        fi
+    elif ((mpd_tcp_requested)); then
+        note "mpd.local.conf requests TCP, but nothing listens on 6600"
     else
         ok "no TCP listener on port 6600"
     fi
