@@ -81,6 +81,7 @@ REQUIRED_FILES=(
     scripts/avrcp-keys.py
     scripts/bt-speaker.sh
     scripts/bt-autoswitch.py
+    scripts/save-position.sh
     systemd/vika-avrcp.service
     systemd/vika-avrcp-keys.service
     systemd/vika-bt-speaker.service
@@ -272,6 +273,7 @@ deploy_file "$REPO_ROOT/scripts/lib/media-lib.sh" "$LIB_DIR/lib/media-lib.sh" 06
 deploy_file "$REPO_ROOT/scripts/play-source.sh" "$LIB_DIR/play-source.sh" 0755
 deploy_file "$REPO_ROOT/scripts/boot-play.sh" "$LIB_DIR/boot-play.sh" 0755
 deploy_file "$REPO_ROOT/scripts/usb-media.sh" "$LIB_DIR/usb-media.sh" 0755
+deploy_file "$REPO_ROOT/scripts/save-position.sh" "$LIB_DIR/save-position.sh" 0755
 deploy_file "$REPO_ROOT/scripts/verify.sh" "/usr/local/sbin/vika-audio-verify" 0755
 deploy_file "$REPO_ROOT/scripts/gpio-controls.py" "$LIB_DIR/gpio-controls.py" 0755
 deploy_file "$REPO_ROOT/docs/MPD_DEPLOY.md" "$DOC_DIR/MPD_DEPLOY.md" 0644
@@ -289,6 +291,8 @@ if ((WITH_BLUETOOTH)); then
     deploy_file "$REPO_ROOT/systemd/vika-avrcp-keys.service" "$UNIT_DIR/vika-avrcp-keys.service" 0644
     deploy_file "$REPO_ROOT/systemd/vika-bt-speaker.service" "$UNIT_DIR/vika-bt-speaker.service" 0644
     deploy_file "$REPO_ROOT/systemd/vika-bt-autoswitch.service" "$UNIT_DIR/vika-bt-autoswitch.service" 0644
+    deploy_file "$REPO_ROOT/systemd/vika-position.service" "$UNIT_DIR/vika-position.service" 0644
+    deploy_file "$REPO_ROOT/systemd/vika-position.timer" "$UNIT_DIR/vika-position.timer" 0644
 else
     log "AVRCP bridge not installed (--no-bluetooth)"
 fi
@@ -326,6 +330,7 @@ if ((WITH_BLUETOOTH)); then
     run systemctl disable --now vika-avrcp.service >/dev/null 2>&1 || true
     run systemctl enable --now vika-avrcp-keys.service
     run systemctl enable --now vika-bt-autoswitch.service
+    run systemctl enable --now vika-position.timer
 fi
 if ((WITH_USB_AUTOMOUNT)); then
     run systemctl enable --now vika-audio-usb.timer

@@ -31,7 +31,8 @@ KEY_PLAYPAUSE = 164
 KEY_STOPCD = 166
 KEY_PLAYCD = 200
 KEY_PAUSECD = 201
-KEY_REWIND = 207
+KEY_PLAY = 207
+KEY_REWIND = 168
 KEY_FASTFORWARD = 208
 KEY_VOLUMEUP = 115
 KEY_VOLUMEDOWN = 114
@@ -62,7 +63,7 @@ def mpc(*args):
 
 
 def action_for(code):
-    if code in (KEY_PLAYCD, KEY_PAUSECD, KEY_PLAYPAUSE):
+    if code in (KEY_PLAYCD, KEY_PAUSECD, KEY_PLAYPAUSE, KEY_PLAY):
         return "toggle", True
     if code == KEY_NEXTSONG:
         return "next", False

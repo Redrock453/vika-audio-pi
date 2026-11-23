@@ -149,6 +149,7 @@ def switch_to_bt():
         log("Bluetooth output did not open; keeping the current output")
         if not enabled_outputs():
             mpc("enable", ANALOG_OUTPUT)
+            mpc("volume", "100")
             mpc("play")
         return
     mpc("disable", ANALOG_OUTPUT)
@@ -159,6 +160,7 @@ def switch_to_bt():
 
 def switch_to_analog():
     mpc("enable", ANALOG_OUTPUT)
+    mpc("volume", "100")
     mpc("disable", BT_OUTPUT)
     log("output -> analog")
 
@@ -166,6 +168,7 @@ def switch_to_analog():
 def ensure_output():
     if not enabled_outputs():
         mpc("enable", ANALOG_OUTPUT)
+        mpc("volume", "100")
         log("no output was enabled; analog fallback enabled")
         mpc("play")
 

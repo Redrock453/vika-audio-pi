@@ -64,7 +64,7 @@ printf 'playing\n' > "$VIKA_TEST_MPC_DIR/state"
 "$play_source" usb >/dev/null 2>&1
 t_rc "play-source usb exits 0" 0 $?
 t_eq "local resume uri saved before switching" "music/01-a.mp3" "$(sed -n 1p "$VIKA_STATE_DIR/local.resume")"
-t_eq "local resume position saved before switching" "42.5" "$(sed -n 2p "$VIKA_STATE_DIR/local.resume")"
+t_eq "local resume position saved before switching" "42" "$(sed -n 2p "$VIKA_STATE_DIR/local.resume")"
 
 expected_usb="$tmp/expected-usb.m3u"
 cat > "$expected_usb" <<'EOF'
@@ -81,7 +81,7 @@ t_eq "last-source switched to usb" "usb" "$(cat "$VIKA_STATE_DIR/last-source")"
 t_rc "play-source local after unplug exits 0" 0 $?
 calls=$(cat "$VIKA_TEST_MPC_LOG")
 t_contains "restores local song index 2 (MPC one-based)" "play 2" "$calls"
-t_contains "restores local position 42.5s" "seek 42.5" "$calls"
+t_contains "restores local position 42s" "seek 42" "$calls"
 t_eq "usb position remembered too" "usb/track-1.flac" "$(sed -n 1p "$VIKA_STATE_DIR/usb.resume")"
 t_eq "last-source back to local" "local" "$(cat "$VIKA_STATE_DIR/last-source")"
 t_file_eq "local queue restored in order" "$expected" "$VIKA_TEST_MPC_DIR/queue"

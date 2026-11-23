@@ -63,8 +63,11 @@ case $cmd in
     status)
         n=$(get_cur)
         total=$(queue_len)
-        uri=$(line_at $((n + 1)))
-        printf '[%s] #%d/%d %s\n' "$(cat "$state")" "$((n + 1))" "$total" "$uri"
+        elapsed=$(get_elapsed)
+        secs=${elapsed%%.*}
+        [[ $secs =~ ^[0-9]+$ ]] || secs=0
+        printf '[%s] #%d/%d %d:%02d/9:59 (0%%)\n' "$(cat "$state")" \
+            "$((n + 1))" "$total" "$((secs / 60))" "$((secs % 60))"
         printf 'volume: 70%%   repeat: off   random: off   single: off   consume: off\n'
         exit 0
         ;;

@@ -1,0 +1,16 @@
+[Unit]
+Description=Vika Audio Pi save the current track and position
+Documentation=file:/usr/local/share/doc/vika-audio/MPD_DEPLOY.md
+
+[Service]
+Type=oneshot
+User=vika
+Group=vika
+Environment=HOME=/home/vika
+Environment=MPD_HOST=/run/vika-audio/mpd.sock
+Environment=VIKA_ENV_FILE=/etc/vika-audio/vika-audio.env
+ExecStart=/usr/local/lib/vika-audio/save-position.sh --quiet
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes

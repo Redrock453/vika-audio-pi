@@ -95,7 +95,7 @@ t_eq "current source" "local" "$(vika_current_source)"
 vika_save_resume local >/dev/null 2>&1
 t_rc "save local resume" 0 $?
 t_eq "resume uri" "music/01-a.mp3" "$(sed -n 1p "$VIKA_STATE_DIR/local.resume")"
-t_eq "resume elapsed" "42.5" "$(sed -n 2p "$VIKA_STATE_DIR/local.resume")"
+t_eq "resume elapsed" "42" "$(sed -n 2p "$VIKA_STATE_DIR/local.resume")"
 
 # --- resume restore (select, pause, seek, play) ---------------------------
 : > "$VIKA_TEST_MPC_LOG"
@@ -104,7 +104,7 @@ t_rc "restore local source" 0 $?
 calls=$(cat "$VIKA_TEST_MPC_LOG")
 t_contains "restore selects saved song index 2 (MPC one-based)" "play 2" "$calls"
 t_contains "restore pauses before seeking" "pause" "$calls"
-t_contains "restore seeks to saved position" "seek 42.5" "$calls"
+t_contains "restore seeks to saved position" "seek 42" "$calls"
 
 # --- short position does not seek ----------------------------------------
 printf 'music/01-a.mp3\n2.0\n' > "$VIKA_STATE_DIR/local.resume"

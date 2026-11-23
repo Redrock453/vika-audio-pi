@@ -1,0 +1,10 @@
+[Unit]
+Description=Vika Audio Pi periodic track/position snapshot
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=30s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target

@@ -230,14 +230,28 @@ vika_current_source() {
 
 # Remember where the current source was paused so it can be restored later
 # (this is what makes "local playlist resumes after unplug" deterministic).
+vika_time_to_seconds() {
+    local t=$1 IFS=':' p s=0
+    local -a parts=()
+    read -ra parts <<< "$t"
+    for p in "${parts[@]}"; do
+        [[ $p =~ ^[0-9]+$ ]] || return 1
+        s=$((s * 60 + 10#$p))
+    done
+    printf '%d' "$s"
+}
+
 vika_save_resume() {
-    local src=$1 line uri elapsed
-    line=$(vika_mpc -f '%file%|%elapsed%' current 2>/dev/null | head -n1) || return 1
-    [[ $line == *'|'* ]] || return 1
-    uri=${line%%|*}
-    elapsed=${line#*|}
-    [[ -n $uri && $uri != *'|'* ]] || return 1
-    [[ $elapsed =~ ^[0-9]+(\.[0-9]+)?$ ]] || elapsed=0
+    local src=$1 uri elapsed=0 line tok
+    # mpc does not expand %elapsed% (and ignores --format for `status` in
+    # 0.35), so read the file and the position separately.
+    uri=$(vika_mpc -f '%file%' current 2>/dev/null | head -n1) || return 1
+    [[ -n $uri ]] || return 1
+    line=$(vika_mpc status 2>/dev/null | grep -E '^\[(playing|paused)\]' | head -n1) || true
+    tok=$(printf '%s\n' "$line" | awk '{print $3}')
+    if [[ $tok == */* ]]; then
+        elapsed=$(vika_time_to_seconds "${tok%%/*}") || elapsed=0
+    fi
     vika_atomic_write "$VIKA_STATE_DIR/$src.resume" "$uri" "$elapsed" || return 1
     vika_log "saved $src resume: $uri @ ${elapsed}s"
 }
