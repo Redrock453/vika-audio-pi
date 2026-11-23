@@ -53,7 +53,7 @@ t_eq "last-source recorded" "local" "$(cat "$VIKA_STATE_DIR/last-source")"
 calls=$(cat "$VIKA_TEST_MPC_LOG")
 t_contains "queue was cleared" "clear" "$calls"
 t_contains "local playlist was loaded" "load local" "$calls"
-t_contains "playback started at the top" "play 0" "$calls"
+t_contains "playback started at the top" "play 1" "$calls"
 
 # --- switch to "inserted" USB ---------------------------------------------
 printf '1\n' > "$VIKA_TEST_MPC_DIR/cur"        # music/01-a.mp3 (0-based)
@@ -80,7 +80,7 @@ t_eq "last-source switched to usb" "usb" "$(cat "$VIKA_STATE_DIR/last-source")"
 "$play_source" local >/dev/null 2>&1
 t_rc "play-source local after unplug exits 0" 0 $?
 calls=$(cat "$VIKA_TEST_MPC_LOG")
-t_contains "restores local song index 1" "play 1" "$calls"
+t_contains "restores local song index 2 (MPC one-based)" "play 2" "$calls"
 t_contains "restores local position 42.5s" "seek 42.5" "$calls"
 t_eq "usb position remembered too" "usb/track-1.flac" "$(sed -n 1p "$VIKA_STATE_DIR/usb.resume")"
 t_eq "last-source back to local" "local" "$(cat "$VIKA_STATE_DIR/last-source")"

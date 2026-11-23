@@ -247,7 +247,7 @@ vika_save_resume() {
 # position while paused (no audible jump), then starts playback if requested.
 vika_restore_source() {
     local src=$1 mode=$2
-    local playlist resume uri="" elapsed=0 line idx=0 secs
+    local playlist resume uri="" elapsed=0 line idx=1 secs
     playlist=$(vika_playlist_file "$src")
     resume="$VIKA_STATE_DIR/$src.resume"
 
@@ -262,11 +262,11 @@ vika_restore_source() {
         line=$(grep -F -x -n -e "$uri" -- "$playlist" 2>/dev/null | head -n1 || true)
         if [[ -n $line ]]; then
             idx=${line%%:*}
-            [[ $idx =~ ^[0-9]+$ ]] || idx=0
-            idx=$((idx > 0 ? idx - 1 : 0))
+            [[ $idx =~ ^[0-9]+$ ]] || idx=1
+            idx=$((idx > 0 ? idx : 1))  # mpc play accepts 1-based indices, never 0
         else
             vika_warn "saved $src track '$uri' is not in the playlist; starting at the top"
-            idx=0
+            idx=1
         fi
     fi
 

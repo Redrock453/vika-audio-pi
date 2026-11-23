@@ -98,7 +98,8 @@ case $cmd in
         ;;
     play)
         if [[ ${1:-} =~ ^[0-9]+$ ]]; then
-            printf '%s\n' "$1" > "$cur"
+            (( $1 > 0 )) || { echo "fake-mpc: song indices start at 1" >&2; exit 1; }
+            printf '%s\n' "$(( $1 - 1 ))" > "$cur"
             printf '0\n' > "$elapsed_file"
         fi
         set_state playing

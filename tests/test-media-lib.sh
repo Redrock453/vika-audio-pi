@@ -102,7 +102,7 @@ t_eq "resume elapsed" "42.5" "$(sed -n 2p "$VIKA_STATE_DIR/local.resume")"
 vika_restore_source local play >/dev/null 2>&1
 t_rc "restore local source" 0 $?
 calls=$(cat "$VIKA_TEST_MPC_LOG")
-t_contains "restore selects saved song index 1" "play 1" "$calls"
+t_contains "restore selects saved song index 2 (MPC one-based)" "play 2" "$calls"
 t_contains "restore pauses before seeking" "pause" "$calls"
 t_contains "restore seeks to saved position" "seek 42.5" "$calls"
 
