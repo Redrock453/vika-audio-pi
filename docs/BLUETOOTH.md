@@ -181,6 +181,54 @@ sudo busctl call "$UNIQ" /org/vika/mpris org.mpris.MediaPlayer2.Player Play
 `vika` itself cannot call the object: the system bus policy only allows root
 to talk to it. That is fine — `bluetoothd` runs as root.
 
+## Pi as a Bluetooth speaker (AIMP on a phone or PC)
+
+AIMP has no Linux ARM build, so it cannot run on the Pi itself. The practical
+integration is the other direction: the Pi becomes an **A2DP sink** (a
+Bluetooth speaker), and AIMP on a phone or laptop streams to it. Audio comes
+out of the 3.5 mm jack; the Pi keeps its local MPD queue for offline use.
+
+```sh
+sudo scripts/bt-speaker.sh on      # advertise + route incoming A2DP to analog
+scripts/bt-speaker.sh status       # unit state, discoverable, active streams
+sudo scripts/bt-speaker.sh off     # stop, stop advertising
+```
+
+`on` starts `vika-bt-speaker.service`, which runs
+
+```
+bluealsa-aplay --profile-a2dp --pcm=plughw:CARD=Headphones,DEV=0 --volume=software
+```
+
+and marks the adapter discoverable + pairable (BlueZ turns discoverability
+off after `DiscoverableTimeout`, 180 s by default; run `on` again or
+`bluetoothctl discoverable on` for another window). It also pauses MPD so
+two players do not talk over each other; the MPD queue and position are
+kept, `mpc play` resumes.
+
+On the phone/PC: pair with **vika-audio** in the Bluetooth settings, then
+pick it as the media output and press play in AIMP. No app is needed on the
+Pi.
+
+Notes:
+
+- The bcm2835 headphone PCM accepts several simultaneous opens (8
+  subdevices), so a separate `dmix` is not required; MPD and the Bluetooth
+  stream can share the jack. Still, pausing MPD is the sane default.
+- While AIMP on the phone is playing, the HD-610 buttons control the
+  **phone**, not the Pi. The Pi-side AVRCP bridge (`vika-avrcp`) only matters
+  when the Pi itself plays.
+- To make the Pi appear as a loudspeaker instead of a generic device, add
+  `Class = 0x200414` under `[General]` in `/etc/bluetooth/main.conf`, then
+  restart in the safe order — **bluetooth first, bluealsa second** — and
+  restart `vika-audio`:
+  `systemctl restart bluetooth && sleep 2 && systemctl restart bluealsa && systemctl restart vika-audio vika-avrcp`.
+  Restarting `bluetoothd` last would drop BlueALSA's A2DP endpoint
+  registration (see the decision tree above).
+- Incoming streams are listed by `bluealsa-aplay --list-pcms` (a `capture`
+  PCM appears only while a source is connected) and in
+  `journalctl -u vika-bt-speaker -b`.
+
 ## Notes
 
 - Do not install PulseAudio or PipeWire just for this. They fight with

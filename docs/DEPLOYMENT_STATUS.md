@@ -24,6 +24,7 @@
 ## Still needs physical testing
 
 - Headset HD-610 button press (AVRCP → MPD) with the bridge active.
+- Bluetooth speaker mode with a real phone/PC running AIMP (pairing, stream, analog output).
 - Cold power-on automatic playback with **no Wi-Fi** available.
 - USB flash insertion, filename-ordered playback, safe removal, and return to microSD playlist on the actual Pi.
 - Inline wired JBL button events; the built-in 3.5 mm jack cannot receive them (a separate microphone/button interface is still needed).

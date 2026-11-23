@@ -78,8 +78,10 @@ REQUIRED_FILES=(
     scripts/verify.sh
     scripts/gpio-controls.py
     scripts/avrcp-mpd.py
-    systemd/vika-audio-gpio.service
+    scripts/bt-speaker.sh
     systemd/vika-avrcp.service
+    systemd/vika-bt-speaker.service
+    systemd/vika-audio-gpio.service
     docs/GPIO.md
     systemd/vika-audio.service
     systemd/vika-audio-usb.service
@@ -275,7 +277,9 @@ deploy_file "$REPO_ROOT/systemd/vika-audio.service" "$UNIT_DIR/vika-audio.servic
 deploy_file "$REPO_ROOT/systemd/vika-audio-gpio.service" "$UNIT_DIR/vika-audio-gpio.service" 0644
 if ((WITH_BLUETOOTH)); then
     deploy_file "$REPO_ROOT/scripts/avrcp-mpd.py" "$LIB_DIR/avrcp-mpd.py" 0755
+    deploy_file "$REPO_ROOT/scripts/bt-speaker.sh" "$LIB_DIR/bt-speaker.sh" 0755
     deploy_file "$REPO_ROOT/systemd/vika-avrcp.service" "$UNIT_DIR/vika-avrcp.service" 0644
+    deploy_file "$REPO_ROOT/systemd/vika-bt-speaker.service" "$UNIT_DIR/vika-bt-speaker.service" 0644
 else
     log "AVRCP bridge not installed (--no-bluetooth)"
 fi

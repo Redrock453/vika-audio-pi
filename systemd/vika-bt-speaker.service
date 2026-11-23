@@ -1,0 +1,26 @@
+[Unit]
+Description=Vika Audio Pi Bluetooth speaker (A2DP sink -> 3.5 mm jack)
+Documentation=file:/usr/local/share/doc/vika-audio/BLUETOOTH.md
+After=bluetooth.service bluealsa.service sound.target
+Wants=bluealsa.service
+
+[Service]
+Type=simple
+User=vika
+Group=vika
+SupplementaryGroups=audio
+# Swallow every A2DP sink stream and play it on the analog jack. Several
+# opens of the bcm2835 PCM are allowed, so MPD can keep its own output.
+ExecStartPre=/usr/local/lib/vika-audio/bt-speaker.sh advertise
+ExecStart=/usr/bin/bluealsa-aplay --profile-a2dp --pcm=plughw:CARD=Headphones,DEV=0 --volume=software
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+WorkingDirectory=/tmp
+RestrictAddressFamilies=AF_UNIX
+
+[Install]
+WantedBy=multi-user.target
