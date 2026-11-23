@@ -1,0 +1,23 @@
+[Unit]
+Description=Vika Audio Pi GPIO contact controls
+Documentation=file:/usr/local/share/doc/vika-audio/GPIO.md
+Wants=vika-audio.service
+After=vika-audio.service
+
+[Service]
+Type=simple
+User=vika
+Group=vika
+SupplementaryGroups=gpio
+Environment=MPD_HOST=/run/vika-audio/mpd.sock
+ExecStart=/usr/bin/python3 /usr/local/lib/vika-audio/gpio-controls.py
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+WorkingDirectory=/tmp
+
+[Install]
+WantedBy=multi-user.target

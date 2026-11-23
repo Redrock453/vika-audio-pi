@@ -76,6 +76,9 @@ REQUIRED_FILES=(
     scripts/boot-play.sh
     scripts/usb-media.sh
     scripts/verify.sh
+    scripts/gpio-controls.py
+    systemd/vika-audio-gpio.service
+    docs/GPIO.md
     systemd/vika-audio.service
     systemd/vika-audio-usb.service
     systemd/vika-audio-usb.timer
@@ -137,7 +140,7 @@ fi
 # ---------------------------------------------------------------------------
 # Packages
 # ---------------------------------------------------------------------------
-PKGS=(mpd mpc alsa-utils)
+PKGS=(mpd mpc alsa-utils python3-gpiozero python3-lgpio)
 if ((WITH_BLUETOOTH)); then
     PKGS+=(bluez bluez-alsa-utils libasound2-plugin-bluez)
 fi
@@ -249,9 +252,12 @@ deploy_file "$REPO_ROOT/scripts/play-source.sh" "$LIB_DIR/play-source.sh" 0755
 deploy_file "$REPO_ROOT/scripts/boot-play.sh" "$LIB_DIR/boot-play.sh" 0755
 deploy_file "$REPO_ROOT/scripts/usb-media.sh" "$LIB_DIR/usb-media.sh" 0755
 deploy_file "$REPO_ROOT/scripts/verify.sh" "/usr/local/sbin/vika-audio-verify" 0755
+deploy_file "$REPO_ROOT/scripts/gpio-controls.py" "$LIB_DIR/gpio-controls.py" 0755
 deploy_file "$REPO_ROOT/docs/MPD_DEPLOY.md" "$DOC_DIR/MPD_DEPLOY.md" 0644
+deploy_file "$REPO_ROOT/docs/GPIO.md" "$DOC_DIR/GPIO.md" 0644
 
 deploy_file "$REPO_ROOT/systemd/vika-audio.service" "$UNIT_DIR/vika-audio.service" 0644
+deploy_file "$REPO_ROOT/systemd/vika-audio-gpio.service" "$UNIT_DIR/vika-audio-gpio.service" 0644
 if ((WITH_USB_AUTOMOUNT)); then
     deploy_file "$REPO_ROOT/systemd/vika-audio-usb.service" "$UNIT_DIR/vika-audio-usb.service" 0644
     deploy_file "$REPO_ROOT/systemd/vika-audio-usb.timer" "$UNIT_DIR/vika-audio-usb.timer" 0644
@@ -276,6 +282,7 @@ done
 
 run systemctl daemon-reload
 run systemctl enable --now vika-audio.service
+run systemctl enable --now vika-audio-gpio.service
 if ((WITH_USB_AUTOMOUNT)); then
     run systemctl enable --now vika-audio-usb.timer
     run systemctl start vika-audio-usb.service
