@@ -10,7 +10,7 @@
 - Analog ALSA `PCM` volume was set to **100%** (+4.00 dB displayed by ALSA). MPD volume was set to **100%**. This high gain can distort; reduce if necessary. Mixer persistence across power cycles has not been tested.
 - MPD service is configured without network-online dependencies and only exposes a local Unix socket. Actual unplugged Wi-Fi boot test is still pending.
 - SSH public-key login for `vika` was already working; administrative operations used the owner's interactive `sudo` authorization.
-- Bluetooth A2DP verified: the **HD-610** headset is paired, bonded and trusted; BlueALSA exposes an `A2DP (SBC) S16_LE 48000 Hz` PCM and `aplay -D bluealsa:DEV=<MAC>,PROFILE=a2dp /usr/share/sounds/alsa/Front_Center.wav` played the sample successfully. The headset reconnected automatically after a reboot.
+- Bluetooth A2DP verified: the **HD-610** headset is paired, bonded and trusted; BlueALSA exposes an `A2DP (SBC) S16_LE 48000 Hz` PCM and `aplay -D bluealsa:DEV=<MAC>,PROFILE=a2dp /usr/share/sounds/alsa/Front_Center.wav` played the sample successfully. The headset reconnected automatically after a reboot. MPD has a second ALSA output, `Bluetooth (BlueALSA)`, targeting the same device; `scripts/audio-out.sh bt|analog` selects the output with `mpc enable/disable`, and MPD playback was verified through BlueALSA (PCM opened, position advancing, no ALSA errors).
 - GPIO contact controls verified: `vika-audio-gpio.service` is enabled and active; shorting GPIO27 -> next, GPIO22 -> prev and GPIO17 -> toggle changes playback as expected. Buttons were confirmed working by the operator.
 
 ## Installation obstacles and fixes
