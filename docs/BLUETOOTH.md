@@ -182,6 +182,11 @@ output sane:
 - **headset disconnects** → enable analog and disable Bluetooth, so the
   queue keeps playing on the jack;
 - **nothing enabled at startup** → enable analog (offline-first fallback);
+- **headset does not come back by itself** → BlueZ never pages a paired
+  device on its own, so the watcher also calls
+  `bluetoothctl connect <addr>` for every paired+trusted audio device,
+  retrying every 15 s (up to 10 attempts); the address is discovered on the
+  bus, never stored in the repo;
 - **speaker mode active** (`vika-bt-speaker`) → does nothing.
 
 It runs as `vika`, needs no extra packages, and logs every switch:

@@ -91,6 +91,33 @@ def speaker_mode_active():
 _BUS = None
 
 
+def trusted_audio_addresses():
+    """Paired+trusted audio devices. BlueZ does not page them on its own;
+    some headsets do not reconnect after the host reboots."""
+    global _BUS
+    if _BUS is None:
+        _BUS = dbus.SystemBus()
+    manager = dbus.Interface(
+        _BUS.get_object("org.bluez", "/"),
+        "org.freedesktop.DBus.ObjectManager",
+    )
+    found = []
+    for path, ifaces in manager.GetManagedObjects().items():
+        dev = ifaces.get("org.bluez.Device1")
+        if dev is None:
+            continue
+        if not (dev.get("Paired") and dev.get("Trusted")):
+            continue
+        cls = int(dev.get("Class", 0))
+        uuids = [str(u) for u in dev.get("UUIDs", [])]
+        audio = ((cls >> 8) & 0x1F) == 0x04 or any(
+            u in A2DP_UUIDS for u in uuids
+        )
+        if audio:
+            found.append(str(dev.get("Address", "")))
+    return [addr for addr in found if addr]
+
+
 def audio_devices():
     global _BUS
     if _BUS is None:
@@ -144,8 +171,32 @@ def ensure_output():
 
 
 class Watcher:
+    MAX_CONNECT_ATTEMPTS = 10
+    CONNECT_RETRY_SECONDS = 15
+
     def __init__(self):
         self.connected = None
+        self.connect_attempts = 0
+        self.next_connect = time.monotonic() + 5
+
+    def try_connect(self):
+        """Ask BlueZ to page trusted audio devices (headsets often stay put
+        after a host reboot and wait to be connected)."""
+        if self.connect_attempts >= self.MAX_CONNECT_ATTEMPTS:
+            return
+        now = time.monotonic()
+        if now < self.next_connect:
+            return
+        self.connect_attempts += 1
+        self.next_connect = now + self.CONNECT_RETRY_SECONDS
+        for addr in trusted_audio_addresses():
+            log("connect attempt %d: %s" % (self.connect_attempts, addr))
+            subprocess.Popen(
+                ["bluetoothctl", "connect", addr],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
 
     def tick(self):
         if speaker_mode_active():
@@ -168,10 +219,14 @@ class Watcher:
             self.connected = now
             if now:
                 log("audio device connected: %s" % ",".join(devices))
+                self.connect_attempts = 0
                 switch_to_bt()
             else:
                 log("audio device disconnected")
                 switch_to_analog()
+
+        if not now:
+            self.try_connect()
         return True
 
 
