@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Test double for lsblk.
+#   VIKA_TEST_LSBLK_FILE   file with pre-cooked "lsblk -P -p" output
+#   VIKA_TEST_PKNAME_MAP   file with lines "<device> <parent>" for PKNAME
+set -u
+
+last=""
+for last in "$@"; do :; done
+
+case " $* " in
+    *PKNAME*)
+        if [[ -n ${VIKA_TEST_PKNAME_MAP:-} && -r $VIKA_TEST_PKNAME_MAP ]]; then
+            awk -v dev="$last" '$1 == dev { print $2; found = 1 } END { exit(found ? 0 : 1) }' "$VIKA_TEST_PKNAME_MAP"
+            exit $?
+        fi
+        exit 1
+        ;;
+esac
+
+case " $* " in
+    *" -o TRAN "*)
+        if [[ -n ${VIKA_TEST_PARENT_TRAN:-} ]]; then
+            printf '%s\n' "$VIKA_TEST_PARENT_TRAN"
+            exit 0
+        fi
+        exit 1
+        ;;
+esac
+
+if [[ -n ${VIKA_TEST_LSBLK_FILE:-} && -r $VIKA_TEST_LSBLK_FILE ]]; then
+    cat -- "$VIKA_TEST_LSBLK_FILE"
+fi
+exit 0

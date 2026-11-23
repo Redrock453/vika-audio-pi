@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+# Test double for mpc. Records every call and emulates just enough of the
+# MPD queue so scripts/play-source.sh and scripts/boot-play.sh can be tested
+# on a laptop without MPD, audio hardware or root.
+#
+# Required env:
+#   VIKA_TEST_MPC_DIR  directory holding queue/cur/state/elapsed
+#   VIKA_TEST_MPC_LOG  file that receives one line per invocation
+# Optional:
+#   VIKA_PLAYLIST_DIR  for "load <name>"
+set -u
+
+dir=${VIKA_TEST_MPC_DIR:?}
+log=${VIKA_TEST_MPC_LOG:?}
+playlist_dir=${VIKA_PLAYLIST_DIR:?}
+
+printf '%s\n' "$*" >> "$log"
+
+format=""
+while (($#)); do
+    case $1 in
+        -f | --format)
+            format=$2
+            shift 2
+            ;;
+        -h | --host)
+            shift 2
+            ;;
+        -q | --quiet | -v | --verbose | --wait)
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+cmd=${1:-}
+shift || true
+
+queue="$dir/queue"
+cur="$dir/cur"
+state="$dir/state"
+elapsed_file="$dir/elapsed"
+
+[[ -f $queue ]] || : > "$queue"
+[[ -f $cur ]] || printf '0\n' > "$cur"
+[[ -f $state ]] || printf 'stopped\n' > "$state"
+[[ -f $elapsed_file ]] || printf '0\n' > "$elapsed_file"
+
+set_state() { printf '%s\n' "$1" > "$state"; }
+get_cur() { cat "$cur" 2>/dev/null || printf '0\n'; }
+get_elapsed() { cat "$elapsed_file" 2>/dev/null || printf '0\n'; }
+line_at() {
+    local n=$1
+    sed -n "${n}p" "$queue"
+}
+queue_len() {
+    awk 'END {print NR}' "$queue"
+}
+
+case $cmd in
+    status)
+        n=$(get_cur)
+        total=$(queue_len)
+        uri=$(line_at $((n + 1)))
+        printf '[%s] #%d/%d %s\n' "$(cat "$state")" "$((n + 1))" "$total" "$uri"
+        printf 'volume: 70%%   repeat: off   random: off   single: off   consume: off\n'
+        exit 0
+        ;;
+    current)
+        uri=$(line_at $(($(get_cur) + 1)))
+        [[ -n $uri ]] || exit 1
+        elapsed=$(get_elapsed)
+        out=${format:-$uri}
+        out=${out//%file%/$uri}
+        out=${out//%elapsed%/$elapsed}
+        printf '%s\n' "$out"
+        exit 0
+        ;;
+    clear)
+        : > "$queue"
+        printf '0\n' > "$cur"
+        printf '0\n' > "$elapsed_file"
+        set_state stopped
+        ;;
+    load)
+        name=${1:-}
+        src="$playlist_dir/$name.m3u"
+        if [[ ! -r $src ]]; then
+            printf 'fake-mpc: no playlist %s\n' "$src" >&2
+            exit 1
+        fi
+        cp -- "$src" "$queue"
+        printf '0\n' > "$cur"
+        printf '0\n' > "$elapsed_file"
+        set_state stopped
+        ;;
+    play)
+        if [[ ${1:-} =~ ^[0-9]+$ ]]; then
+            (( $1 > 0 )) || { echo "fake-mpc: song indices start at 1" >&2; exit 1; }
+            printf '%s\n' "$(( $1 - 1 ))" > "$cur"
+            printf '0\n' > "$elapsed_file"
+        fi
+        set_state playing
+        ;;
+    pause) set_state paused ;;
+    stop) set_state stopped ;;
+    seek)
+        printf '%s\n' "${1:-0}" > "$elapsed_file"
+        ;;
+    update) : ;;
+    enable | disable | outputs | stats) : ;;
+    *)
+        printf 'fake-mpc: unhandled command %s\n' "$cmd" >&2
+        exit 2
+        ;;
+esac
+exit 0

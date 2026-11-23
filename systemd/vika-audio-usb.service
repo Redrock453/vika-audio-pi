@@ -1,0 +1,25 @@
+[Unit]
+Description=Vika Audio Pi — reconcile USB flash media (read-only mount and playlist switch)
+Documentation=file:/usr/local/share/doc/vika-audio/MPD_DEPLOY.md
+After=local-fs.target
+# Started by udev (TAG+="systemd") and by vika-audio-usb.timer. It is idempotent:
+# running it when nothing changed is a no-op.
+
+[Service]
+Type=oneshot
+Environment=VIKA_ENV_FILE=/etc/vika-audio/vika-audio.env
+ExecStart=/usr/local/lib/vika-audio/usb-media.sh reconcile
+TimeoutStartSec=120
+Nice=5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
+UMask=0022
+
+# IMPORTANT: this unit must stay in the *host* mount namespace. Mount options
+# such as PrivateTmp=, ProtectSystem=, ProtectHome=, ProtectKernelTunables=
+# or ReadWritePaths= make systemd create a private mount namespace; a mount
+# performed there would not be visible to MPD (or anything else) and would
+# vanish when the oneshot finishes. Only non-mount sandboxing is used here.
+NoNewPrivileges=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes

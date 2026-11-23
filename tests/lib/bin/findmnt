@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Test double for findmnt.
+#   VIKA_TEST_ROOT_SOURCE   source of / (empty -> not found)
+#   VIKA_TEST_MOUNT_SOURCE  source mounted at --mountpoint (empty -> not mounted)
+#   VIKA_TEST_MOUNT_OPTIONS mount options for --mountpoint
+set -u
+
+case " $* " in
+    *" --target / "* | *" --target /"*)
+        if [[ -n ${VIKA_TEST_ROOT_SOURCE:-} ]]; then
+            printf '%s\n' "$VIKA_TEST_ROOT_SOURCE"
+            exit 0
+        fi
+        exit 1
+        ;;
+esac
+
+case " $* " in
+    *" --mountpoint "*)
+        if [[ -n ${VIKA_TEST_MOUNT_SOURCE:-} ]]; then
+            case " $* " in
+                *" -o OPTIONS "*)
+                    printf '%s\n' "${VIKA_TEST_MOUNT_OPTIONS:-rw,relatime}"
+                    ;;
+                *)
+                    printf '%s\n' "$VIKA_TEST_MOUNT_SOURCE"
+                    ;;
+            esac
+            exit 0
+        fi
+        exit 1
+        ;;
+esac
+
+exit 1

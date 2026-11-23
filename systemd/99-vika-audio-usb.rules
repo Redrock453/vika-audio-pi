@@ -1,0 +1,11 @@
+# Vika Audio Pi — ordinary USB flash insertion/removal.
+# Installed path: /etc/udev/rules.d/99-vika-audio-usb.rules
+#
+# Only block partitions on a USB bus are considered. The reconcile service
+# refuses the disk that carries / (including USB boot) and refuses to guess
+# when several candidate partitions exist. Nothing is written to the medium:
+# usb-media.sh mounts it read-only.
+#
+# The timer (vika-audio-usb.timer) is the safety net if an event is missed.
+
+ACTION=="add|change|remove", SUBSYSTEM=="block", KERNEL=="sd[a-z][0-9]*", ENV{ID_BUS}=="usb", TAG+="systemd", ENV{SYSTEMD_WANTS}+="vika-audio-usb.service"
