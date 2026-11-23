@@ -1,0 +1,63 @@
+[Unit]
+Description=Vika Audio Pi offline player (MPD, analog plughw:0,0)
+Documentation=file:/usr/local/share/doc/vika-audio/MPD_DEPLOY.md
+# Local filesystem and sound only. No network unit is required: the player
+# must work with Wi-Fi and Ethernet both absent.
+Wants=sound.target
+After=local-fs.target sound.target
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=vika
+Group=vika
+SupplementaryGroups=audio
+SyslogIdentifier=vika-audio
+
+RuntimeDirectory=vika-audio
+RuntimeDirectoryMode=0750
+StateDirectory=vika-audio
+StateDirectoryMode=0750
+CacheDirectory=vika-audio
+CacheDirectoryMode=0750
+
+Environment=HOME=/home/vika
+Environment=MPD_HOST=/run/vika-audio/mpd.sock
+Environment=VIKA_ENV_FILE=/etc/vika-audio/vika-audio.env
+
+# StateDirectory already creates /var/lib/vika-audio owned by vika; these
+# subdirectories must exist before MPD opens its playlist/db paths.
+ExecStartPre=/usr/bin/install -d -m 0750 /var/lib/vika-audio/playlists /var/lib/vika-audio/state
+
+ExecStart=/usr/bin/mpd --no-daemon --stdout /etc/vika-audio/mpd.conf
+# Autoplay decision lives in this script (USB first, otherwise local resume).
+# It never fails the unit; no media means idle, not a restart loop.
+ExecStartPost=/usr/local/lib/vika-audio/boot-play.sh
+ExecStop=-/usr/bin/mpc stop
+
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=300
+TimeoutStopSec=20
+UMask=0027
+
+# Hardening. MPD only reads the library (ProtectHome=read-only) and writes
+# under /var/lib/vika-audio and its runtime socket directory.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/lib/vika-audio /run/vika-audio
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+
+[Install]
+WantedBy=multi-user.target

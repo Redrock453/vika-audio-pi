@@ -1,0 +1,15 @@
+[Unit]
+Description=Vika Audio Pi — periodic USB reconcile (safety net for missed udev events)
+Documentation=file:/usr/local/share/doc/vika-audio/MPD_DEPLOY.md
+
+[Timer]
+# First reconcile shortly after boot, then only when the previous run is over.
+# The script itself is a no-op when the medium state has not changed, so this
+# does not interrupt playback and does not write to the SD card.
+OnBootSec=25s
+OnUnitInactiveSec=60s
+AccuracySec=5s
+Unit=vika-audio-usb.service
+
+[Install]
+WantedBy=timers.target
