@@ -272,6 +272,7 @@ deploy_file "$REPO_ROOT/scripts/verify.sh" "/usr/local/sbin/vika-audio-verify" 0
 deploy_file "$REPO_ROOT/scripts/gpio-controls.py" "$LIB_DIR/gpio-controls.py" 0755
 deploy_file "$REPO_ROOT/docs/MPD_DEPLOY.md" "$DOC_DIR/MPD_DEPLOY.md" 0644
 deploy_file "$REPO_ROOT/docs/GPIO.md" "$DOC_DIR/GPIO.md" 0644
+deploy_file "$REPO_ROOT/docs/BLUETOOTH.md" "$DOC_DIR/BLUETOOTH.md" 0644
 
 deploy_file "$REPO_ROOT/systemd/vika-audio.service" "$UNIT_DIR/vika-audio.service" 0644
 deploy_file "$REPO_ROOT/systemd/vika-audio-gpio.service" "$UNIT_DIR/vika-audio-gpio.service" 0644
