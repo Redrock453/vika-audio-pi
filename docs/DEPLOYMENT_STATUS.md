@@ -12,6 +12,7 @@
 - SSH public-key login for `vika` was already working; administrative operations used the owner's interactive `sudo` authorization.
 - Bluetooth A2DP verified: the **HD-610** headset is paired, bonded and trusted; BlueALSA exposes an `A2DP (SBC) S16_LE 48000 Hz` PCM and `aplay -D bluealsa:DEV=<MAC>,PROFILE=a2dp /usr/share/sounds/alsa/Front_Center.wav` played the sample successfully. The headset reconnected automatically after a reboot. MPD has a second ALSA output, `Bluetooth (BlueALSA)`, targeting the same device; `scripts/audio-out.sh bt|analog` selects the output with `mpc enable/disable`, and MPD playback was verified through BlueALSA (PCM opened, position advancing, no ALSA errors).
 - GPIO contact controls verified: `vika-audio-gpio.service` is enabled and active; shorting GPIO27 -> next, GPIO22 -> prev and GPIO17 -> toggle changes playback as expected. Buttons were confirmed working by the operator.
+- AVRCP button bridge installed: `vika-avrcp.service` exports an MPRIS player via `org.bluez.Media1.RegisterPlayer` and maps play/pause/next/prev to `mpc`; `bluetoothd` logs `Player registered: ... path=/org/vika/mpris`, and Pause/Play/Next were verified from the bus. The previous `mpris-proxy` user unit was disabled globally so it cannot occupy the single player slot. Headset-button press test is still pending.
 
 ## Installation obstacles and fixes
 
@@ -22,6 +23,7 @@
 
 ## Still needs physical testing
 
+- Headset HD-610 button press (AVRCP → MPD) with the bridge active.
 - Cold power-on automatic playback with **no Wi-Fi** available.
 - USB flash insertion, filename-ordered playback, safe removal, and return to microSD playlist on the actual Pi.
 - Inline wired JBL button events; the built-in 3.5 mm jack cannot receive them (a separate microphone/button interface is still needed).
@@ -36,7 +38,8 @@ amixer -c 0 sget PCM
 /usr/local/lib/vika-audio/usb-media.sh status
 
 # Bluetooth (optional output)
-systemctl is-active bluetooth bluealsa
+systemctl is-active bluetooth bluealsa vika-avrcp
+journalctl -u bluetooth -b --no-pager | grep -i 'Player registered'
 bluetoothctl info                 # expect paired/bonded/trusted/connected
 bluealsa-aplay --list-devices     # expect an A2DP (SBC) PCM
 ```

@@ -1,0 +1,25 @@
+[Unit]
+Description=Vika Audio Pi AVRCP (headset buttons) to MPD bridge
+Documentation=file:/usr/local/share/doc/vika-audio/BLUETOOTH.md
+Wants=vika-audio.service
+After=vika-audio.service bluetooth.service
+
+[Service]
+Type=simple
+# Must run as root: BlueZ's D-Bus policy only lets root own a media player,
+# and bluetoothd (root) calls the registered object.
+User=root
+Environment=MPD_HOST=/run/vika-audio/mpd.sock
+ExecStart=/usr/bin/python3 /usr/local/lib/vika-audio/avrcp-mpd.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+WorkingDirectory=/tmp
+# Only the system D-Bus and the MPD UNIX socket are needed.
+RestrictAddressFamilies=AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

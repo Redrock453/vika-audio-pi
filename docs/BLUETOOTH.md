@@ -124,6 +124,63 @@ trust <MAC>
 connect <MAC>
 ```
 
+## Headset buttons (AVRCP → MPD)
+
+BlueZ forwards AVRCP commands (play/pause/next/previous from the headphones)
+to exactly **one** registered media player, and that object must implement
+`org.mpris.MediaPlayer2.Player`. `vika-avrcp.service` exports such an object
+(`scripts/avrcp-mpd.py`) and translates its methods into `mpc` calls on the
+local MPD socket:
+
+| MPRIS method | command |
+| --- | --- |
+| `Play` | `mpc play` |
+| `Pause` | `mpc pause` |
+| `PlayPause` | `mpc toggle` |
+| `Stop` | `mpc stop` |
+| `Next` | `mpc next` |
+| `Previous` | `mpc prev` |
+| `Seek`, `SetPosition` | `mpc seek` |
+
+The service runs as **root**: `/usr/share/dbus-1/system.d/bluetooth.conf`
+grants the `org.bluez.MediaPlayer1` interface only to `policy user="root"`,
+and `bluetoothd` (root) is the process that calls the object. It needs the
+system D-Bus and `MPD_HOST=/run/vika-audio/mpd.sock`, nothing else.
+
+### Only one player slot
+
+If a desktop session is present, `mpris-proxy` (a **user** unit) usually owns
+the slot and the headset buttons control that proxy instead. The installer
+disables it globally:
+
+```sh
+sudo systemctl --global disable mpris-proxy.service
+pkill -x mpris-proxy   # only if it is still running
+```
+
+If another player already holds the slot, `avrcp-mpd` logs
+`RegisterPlayer failed: ... AlreadyExists`. It is not retried until BlueZ
+restarts.
+
+### Check it
+
+```sh
+systemctl status vika-avrcp.service
+journalctl -u vika-avrcp -b --no-pager
+journalctl -u bluetooth -b --no-pager | grep -i player   # Player registered: ...
+```
+
+Test the bridge without touching the headphones (as root):
+
+```sh
+UNIQ=$(busctl list --no-pager | awk '/python3/{print $1; exit}')
+sudo busctl call "$UNIQ" /org/vika/mpris org.mpris.MediaPlayer2.Player Pause
+sudo busctl call "$UNIQ" /org/vika/mpris org.mpris.MediaPlayer2.Player Play
+```
+
+`vika` itself cannot call the object: the system bus policy only allows root
+to talk to it. That is fine — `bluetoothd` runs as root.
+
 ## Notes
 
 - Do not install PulseAudio or PipeWire just for this. They fight with

@@ -77,7 +77,9 @@ REQUIRED_FILES=(
     scripts/usb-media.sh
     scripts/verify.sh
     scripts/gpio-controls.py
+    scripts/avrcp-mpd.py
     systemd/vika-audio-gpio.service
+    systemd/vika-avrcp.service
     docs/GPIO.md
     systemd/vika-audio.service
     systemd/vika-audio-usb.service
@@ -142,7 +144,7 @@ fi
 # ---------------------------------------------------------------------------
 PKGS=(mpd mpc alsa-utils python3-gpiozero python3-lgpio)
 if ((WITH_BLUETOOTH)); then
-    PKGS+=(bluez bluez-alsa-utils libasound2-plugin-bluez)
+    PKGS+=(bluez bluez-alsa-utils libasound2-plugin-bluez python3-dbus python3-gi)
 fi
 
 MISSING=()
@@ -271,6 +273,12 @@ deploy_file "$REPO_ROOT/docs/GPIO.md" "$DOC_DIR/GPIO.md" 0644
 
 deploy_file "$REPO_ROOT/systemd/vika-audio.service" "$UNIT_DIR/vika-audio.service" 0644
 deploy_file "$REPO_ROOT/systemd/vika-audio-gpio.service" "$UNIT_DIR/vika-audio-gpio.service" 0644
+if ((WITH_BLUETOOTH)); then
+    deploy_file "$REPO_ROOT/scripts/avrcp-mpd.py" "$LIB_DIR/avrcp-mpd.py" 0755
+    deploy_file "$REPO_ROOT/systemd/vika-avrcp.service" "$UNIT_DIR/vika-avrcp.service" 0644
+else
+    log "AVRCP bridge not installed (--no-bluetooth)"
+fi
 if ((WITH_USB_AUTOMOUNT)); then
     deploy_file "$REPO_ROOT/systemd/vika-audio-usb.service" "$UNIT_DIR/vika-audio-usb.service" 0644
     deploy_file "$REPO_ROOT/systemd/vika-audio-usb.timer" "$UNIT_DIR/vika-audio-usb.timer" 0644
@@ -296,6 +304,12 @@ done
 run systemctl daemon-reload
 run systemctl enable --now vika-audio.service
 run systemctl enable --now vika-audio-gpio.service
+if ((WITH_BLUETOOTH)); then
+    # BlueZ allows a single registered media player; stop the desktop proxy
+    # if a user session brought it up, otherwise our bridge is ignored.
+    run systemctl --global disable mpris-proxy.service >/dev/null 2>&1 || true
+    run systemctl enable --now vika-avrcp.service
+fi
 if ((WITH_USB_AUTOMOUNT)); then
     run systemctl enable --now vika-audio-usb.timer
     run systemctl start vika-audio-usb.service
